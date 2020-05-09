@@ -23,8 +23,17 @@ public class FindAnimatorWindow : EditorWindow
 
     private bool isPlaying = false;
 
-
     private float editorLastTime = 0f;
+
+    private Animation currentAnimation = null;
+
+    private float animationSpeed = 1f;
+
+    private float samplerAnim = 1f;
+
+    private float animTime;
+
+    private float delayBetweenAnimation = 0f;
 
     [MenuItem("Window/Toolbox/AnimationSimulator")]
     static void InitWindow()
@@ -71,6 +80,7 @@ public class FindAnimatorWindow : EditorWindow
                 currenAnimator = animatorComponentsArr[i];
                 tabIndex = 1;
                 currentAnimIndex = 0;
+               // EditorApplication.hierarchyWindowItemOnGUI;
             }
         }
     }
@@ -81,12 +91,16 @@ public class FindAnimatorWindow : EditorWindow
         GUILayout.Label("Animations");
         if (animator == null) return;
 
-        animClipsArr = FindAnimationInAnimator(animator);
+        animClipsArr = FindAnimationClipInAnimator(animator);
         animNamesArr = FindAnimNames(animClipsArr);
         EditorSceneManager.sceneOpened += EditorSceneManager_sceneOpened;
 
         currentAnimIndex = EditorGUILayout.Popup("Current Anim", currentAnimIndex, animNamesArr);
-        
+
+        animationSpeed = EditorGUILayout.FloatField("Animation Speed", animationSpeed);
+
+        delayBetweenAnimation = EditorGUILayout.FloatField("Delay Between Animation", delayBetweenAnimation);
+
 
         if (isPlaying)
         {
@@ -100,11 +114,34 @@ public class FindAnimatorWindow : EditorWindow
         }
 
         GUILayout.Space(10f);
+
+        GUILayout.Label("SamplerAnimation");
+        samplerAnim = GUILayout.HorizontalSlider(samplerAnim, 0f, animClipsArr[currentAnimIndex].length);
+
+        if (!isPlaying)
+        {
+            AnimationMode.StartAnimationMode();
+            AnimationMode.SampleAnimationClip(currenAnimator.gameObject, animClipsArr[currentAnimIndex], samplerAnim);
+            
+        }
+
+        GUILayout.Space(10f);
+        GUILayout.Label("Info animation");
+        if (isPlaying)
+            GUILayout.Label("Current duration : " + animTime.ToString());
+        else
+            GUILayout.Label("Current duration : " + samplerAnim.ToString());
+
+        GUILayout.Label("Total Duration : " + animClipsArr[currentAnimIndex].length.ToString());
+        GUILayout.Label("Is looping : " + animClipsArr[currentAnimIndex].isLooping.ToString());
+
+
     }
 
     private void EditorSceneManager_sceneOpened(Scene scene, OpenSceneMode mode)
     {
         StopAnim();
+        animatorComponentsArr = FindAnimatorInScene();
     }
 
     private void PlayAnim()
@@ -126,9 +163,9 @@ public class FindAnimatorWindow : EditorWindow
 
     private void OnEditorUpdate()
     {
-        float animTime = Time.realtimeSinceStartup - editorLastTime;
+        animTime = (Time.realtimeSinceStartup - editorLastTime) * animationSpeed;
         AnimationClip animClip = animClipsArr[currentAnimIndex];
-        animTime %= animClip.length;
+        animTime %= animClip.length + delayBetweenAnimation;
         AnimationMode.SampleAnimationClip(currenAnimator.gameObject, animClip, animTime);
     }
 
@@ -144,7 +181,7 @@ public class FindAnimatorWindow : EditorWindow
         return liAnimatorComponents.ToArray();
     }
 
-    private AnimationClip[] FindAnimationInAnimator(Animator animator)
+    private AnimationClip[] FindAnimationClipInAnimator(Animator animator)
     {
         List<AnimationClip> liAnimClip = new List<AnimationClip>();
 
