@@ -35,6 +35,10 @@ public class FindAnimatorWindow : EditorWindow
 
     private float delayBetweenAnimation = 0f;
 
+    private string nameAnimator;
+
+    int markedObjects;
+
     [MenuItem("Window/Toolbox/AnimationSimulator")]
     static void InitWindow()
     {
@@ -61,8 +65,10 @@ public class FindAnimatorWindow : EditorWindow
         animatorComponentsArr = FindAnimatorInScene();
     }
 
+
     private void GUITabsAnimator()
     {
+
         GUILayout.Space(10f);
         GUILayout.Label("List animators");
 
@@ -80,7 +86,9 @@ public class FindAnimatorWindow : EditorWindow
                 currenAnimator = animatorComponentsArr[i];
                 tabIndex = 1;
                 currentAnimIndex = 0;
-               // EditorApplication.hierarchyWindowItemOnGUI;
+
+                markedObjects = animatorComponentsArr[i].gameObject.GetInstanceID();
+                EditorApplication.hierarchyWindowItemOnGUI += HierarchyItem;
             }
         }
     }
@@ -135,7 +143,15 @@ public class FindAnimatorWindow : EditorWindow
         GUILayout.Label("Total Duration : " + animClipsArr[currentAnimIndex].length.ToString());
         GUILayout.Label("Is looping : " + animClipsArr[currentAnimIndex].isLooping.ToString());
 
+    }
 
+    private void HierarchyItem(int instanceID, Rect selectionRect)
+    {
+        Rect r = new Rect(selectionRect);
+        r.x = r.width - 20;
+        r.width = 18;
+        if(markedObjects == instanceID)
+        GUI.Label(r, currenAnimator.ToString());
     }
 
     private void EditorSceneManager_sceneOpened(Scene scene, OpenSceneMode mode)
